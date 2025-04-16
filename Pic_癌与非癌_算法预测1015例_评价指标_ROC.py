@@ -213,5 +213,5 @@ def main(file_path):
 
 # 示例调用
 if __name__ == "__main__":
-    file_path = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\data_012_0123_模型判读_01_1015例.xlsx'  # 替换为您的文件路径
+    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/turbt_论文/Experimentation/data_012_0123_模型判读_01_1015例.xlsx'  # 替换为您的文件路径
     main(file_path)

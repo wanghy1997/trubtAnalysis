@@ -116,13 +116,13 @@ def plot_roc_curve(y_true, prob_all, auc_ci_low, auc_ci_high, class_labels):
     # plt.grid(True)
 
     os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
-    save_path = os.path.join(save_dir, f"非浸润与浸润癌_内部验证_ROC.pdf")
+    save_path = os.path.join(save_dir, f"非浸润与浸润癌_外部验证_ROC.pdf")
     plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 
 
 def calculate_metrics(df, label_col, pred_col, prob_cols, class_labels=[0, 1, 2]):
     metrics = {}
-    auc_ci_low, auc_ci_high = [0.925, 0.793, 0.868], [0.987, 0.907, 0.956]
+    auc_ci_low, auc_ci_high = [0.917, 0.794, 0.938], [0.982, 0.905, 0.991]
     # 计算每个类别的 AUC, Sensitivity, Specificity, PPV, NPV
     for label in class_labels:
         y_true = (df[label_col] == label).astype(int)
@@ -234,9 +234,10 @@ def map_case_0123(label):
 # 主程序
 if __name__ == "__main__":
     # 假设你的数据已经加载为 pandas DataFrame
-    df = pd.read_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/副本模型验证结果+概率-250414.xlsx', sheet_name='内部验证-浸润非浸润')
+    df = pd.read_excel(
+        '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/副本模型验证结果+概率-250414.xlsx',
+        sheet_name='外部验证-浸润非浸润')
     # 假设df已经包含 'Label', 'ModelPred', 'ModelProb' 三列
-
     # 通过 'Label' 获取真实标签
     labels = df['Label'].values
     doctor_results = df['ModelPred'].values

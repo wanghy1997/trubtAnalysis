@@ -83,9 +83,9 @@ def plot_confusion_matrix(labels, predictions, class_names, font_size=12):
     plt.yticks(fontsize=16)
     # 调整子图参数以防止标签被截断
     plt.subplots_adjust(left=0.25, right=1, top=0.9, bottom=0.1)
-    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/demo'
+    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/验证'
     os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
-    save_path = os.path.join(save_dir, f"非癌与癌_confusionMatrix.pdf")
+    save_path = os.path.join(save_dir, f"非癌与癌_内部验证_confusionMatrix.pdf")
     plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 
 
@@ -157,6 +157,8 @@ def main(file_path):
 
     label, prob0, prob1, pred = load_data(file_path)
 
+
+
     # 计算正类为1的AUC及其95% CI
     auc1, ci_lower1, ci_upper1 = compute_auc_ci(label, prob1, pos_label=1)
     print(f"正类为1的AUC: {auc1:.2f}, 95% CI: [{ci_lower1:.2f}, {ci_upper1:.2f}]")
@@ -207,13 +209,19 @@ def main(file_path):
     )
     # plt.grid(True)
 
-    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/demo'
+    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/验证'
     os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
-    save_path = os.path.join(save_dir, f"非癌与癌_ROC.pdf")
+    save_path = os.path.join(save_dir, f"非癌与癌_内部验证_ROC.pdf")
     plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 
+    # 计算各“Label”的数量
+    label_counts = label.value_counts()
+    print("各Label的数量:")
+    for label, count in label_counts.items():
+        print(f"Label {label}: {count}")
+    print(f"总数量: {label_counts.sum()}")
 
 # 示例调用
 if __name__ == "__main__":
-    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/data_01_人工判读与模型判读_35例.xlsx'  # 替换为您的文件路径
+    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-癌与非癌-整合后结2.xlsx'  # 替换为您的文件路径
     main(file_path)

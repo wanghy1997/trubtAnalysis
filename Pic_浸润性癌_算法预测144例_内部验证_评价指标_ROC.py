@@ -65,7 +65,7 @@ def plot_confusion_matrix(cm, class_labels, title='Confusion Matrix'):
     # 调整子图参数以防止标签被截断
     plt.subplots_adjust(left=0.2, right=1.0, top=0.9, bottom=0.1)
     os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
-    save_path = os.path.join(save_dir, f"非浸润与浸润癌_外部验证_ConfusionMatrix.pdf")
+    save_path = os.path.join(save_dir, f"非浸润与浸润癌_内部验证_ConfusionMatrix.pdf")
     plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 
 

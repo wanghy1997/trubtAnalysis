@@ -23,7 +23,6 @@ def compute_roc(label, prob, pos_label):
 def plot_roc(fpr, tpr, roc_auc, label, low, upper, color):
     plt.plot(fpr, tpr, lw=3, label=f'{label}_AUC = {roc_auc:.3f}({low:.3f}-{upper:.3f})', color=color)
 
-
 # 计算AUC及其95%置信区间
 def compute_auc_ci(label, prob, pos_label, n_bootstraps=1000, alpha=0.95):
     from sklearn.utils import resample
@@ -42,7 +41,6 @@ def compute_auc_ci(label, prob, pos_label, n_bootstraps=1000, alpha=0.95):
     ci_lower = sorted_aucs[int((1 - alpha) / 2 * len(sorted_aucs))]
     ci_upper = sorted_aucs[int((1 + alpha) / 2 * len(sorted_aucs))]
     return roc_auc, ci_lower, ci_upper
-
 
 def plot_confusion_matrix(labels, predictions, class_names, font_size=12):
     import textwrap
@@ -151,69 +149,139 @@ def compute_metrics_ci(label, pred, pos_label=1, n_bootstraps=1000, alpha=0.95):
         'Accuracy': (accuracy, ci_lowers[4], ci_uppers[4])
     }
 
+
+# 假设原始数据在名为 "原始数据" 的列中
+def transform(value):
+    if value in [0, 1]:
+        return 0
+    elif value == 2:
+        return 1
+    elif value == 3:
+        return 2
+    else:
+        return None  # 或者 return value，看你是否希望保留未知数值
+
+
+def transform_(value):
+    if value in [0]:
+        return 0
+    else:
+        return 1
+
+
+def process_dataframe(df):
+    """
+    根据指定规则处理 DataFrame 并新增列：
+    - Label0_0：Label0 为 0 或 1 时为 0，否则为 None。
+    - Pred0_0：
+        - 如果 Pred 为 0 或 2，则为 0，ModelProb_0 赋值给 ModelProb_0_0。
+        - 否则为 1，ModelProb_1 赋值给 ModelProb_0_1。
+    """
+
+    # Label0_0 列处理
+    df["Label_tumorOrNo0"] = df["Label0"].apply(lambda x: 0 if x in [0, 1] else 1)
+
+    # Pred0_0 及 ModelProb 列处理
+    def process_pred(row):
+        if row["Pred0"] in [0, 1]:
+            return pd.Series([0, row["ModelProb_0"], 1.0-row["ModelProb_0"]])
+        else:
+            return pd.Series([1, 1.0-row["ModelProb_1"], row["ModelProb_1"]])
+
+    df[["Pred_tumorOrNo0", "Pred_tumorOrNo0_0", "Pred_tumorOrNo0_1"]] = df.apply(process_pred, axis=1)
+
+    return df
+
+
+def process_dataframe1(df):
+    """
+    根据指定规则处理 DataFrame 并新增列：
+    - Label0_0：Label0 为 0 或 1 时为 0，否则为 None。
+    - Pred0_0：
+        - 如果 Pred 为 0 或 2，则为 0，ModelProb_0 赋值给 ModelProb_0_0。
+        - 否则为 1，ModelProb_1 赋值给 ModelProb_0_1。
+    """
+
+    # Label0_0 列处理
+    df["Label_tumorOrNo1"] = df["Label"].apply(lambda x: 0 if x in [0] else 1)
+
+    # Pred0_0 及 ModelProb 列处理
+    def process_pred(row):
+        if row["Pred1"] in [0]:
+            return pd.Series([0, row["Prob_Cls00"], 1.0-row["Prob_Cls00"]])
+        else:
+            return pd.Series([1, 1.0-(row["Prob_Cls10"]+row["Prob_Cls20"]), row["Prob_Cls10"]+row["Prob_Cls20"]])
+
+    df[["Pred_tumorOrNo1", "Pred_tumorOrNo1_0", "Pred_tumorOrNo1_1"]] = df.apply(process_pred, axis=1)
+
+    return df
+
+
+def process_dataframe3(df):
+    """
+    根据指定规则处理 DataFrame 并新增列：
+    - Label0_0：Label0 为 0 或 1 时为 0，否则为 None。
+    - Pred0_0：
+        - 如果 Pred 为 0 或 2，则为 0，ModelProb_0 赋值给 ModelProb_0_0。
+        - 否则为 1，ModelProb_1 赋值给 ModelProb_0_1。
+    """
+
+    # Label0_0 列处理
+    df["Label_tumorOrNo1"] = df["Label"].apply(lambda x: 0 if x in [0] else 1)
+
+    # Pred0_0 及 ModelProb 列处理
+    def process_pred(row):
+        if row["Pred1"] in [0]:
+            return pd.Series([0, row["Prob_Cls00"], 1.0-row["Prob_Cls00"]])
+        else:
+            return pd.Series([1, 1.0-(row["Prob_Cls10"]+row["Prob_Cls20"]), row["Prob_Cls10"]+row["Prob_Cls20"]])
+
+    df[["Pred_tumorOrNo1", "Pred_tumorOrNo1_0", "Pred_tumorOrNo1_1"]] = df.apply(process_pred, axis=1)
+
+    return df
+
+
+def process_pred_tumor_flags(df):
+    """
+    处理预测标记列，根据 Pred_tumorOrNo0 和 Pred_tumorOrNo1 的值生成 pred、prob0 和 prob1。
+    """
+
+    def compute_pred_and_probs(row):
+        if row["Pred_tumorOrNo0"] == 0 and row["Pred_tumorOrNo1"] == 0:
+            pred = 0
+            prob0 = row["Pred_tumorOrNo0_0"]
+            prob1 = row["Pred_tumorOrNo0_1"]
+        else:
+            pred = 1
+            prob0 = row["Pred_tumorOrNo1_0"]
+            prob1 = row["Pred_tumorOrNo1_1"]
+        return pd.Series([pred, prob0, prob1], index=["pred", "prob0", "prob1"])
+
+    df[["pred", "prob0", "prob1"]] = df.apply(compute_pred_and_probs, axis=1)
+    return df
+
+
 # 主函数
 def main(file_path):
     # 获取数据
 
-    label, prob0, prob1, pred = load_data(file_path)
+    df = pd.read_excel(file_path)  # 假设数据存储在Excel文件中
 
-    # 计算正类为1的AUC及其95% CI
-    auc1, ci_lower1, ci_upper1 = compute_auc_ci(label, prob1, pos_label=1)
-    print(f"正类为1的AUC: {auc1:.2f}, 95% CI: [{ci_lower1:.2f}, {ci_upper1:.2f}]")
 
-    # 计算正类为0的AUC及其95% CI
-    auc0, ci_lower0, ci_upper0 = compute_auc_ci(label, prob0, pos_label=0)
-    print(f"正类为0的AUC: {auc0:.2f}, 95% CI: [{ci_lower0:.2f}, {ci_upper0:.2f}]")
+    # # 应用转换逻辑并新增一列
+    # df["Pred0_0"] = df["Pred0_0"].apply(transform_)
+    # df["Label0_0"] = df["Label0_0"].apply(transform_)
 
-    # 总体AUC（以正类为1）
-    print(f"总体AUC（正类为1）: {auc1:.3f}, 95% CI: [{ci_lower1:.3f}, {ci_upper1:.3f}]")
 
-    # 计算正类为1的指标
-    metrics_class1 = compute_metrics_ci(label, pred, pos_label=1)
-    print("\n正类为1的指标:")
-    for metric, (value, ci_lower, ci_upper) in metrics_class1.items():
-        print(f"{metric}: {value:.3f}, 95% CI: [{ci_lower:.3f}, {ci_upper:.3f}]")
+    # 调用处理方法
+    process_pred_tumor_flags(df)
 
-    # 计算正类为0的指标
-    metrics_class0 = compute_metrics_ci(label, pred, pos_label=0)
-    print("\n正类为0的指标:")
-    for metric, (value, ci_lower, ci_upper) in metrics_class0.items():
-        print(f"{metric}: {value:.3f}, 95% CI: [{ci_lower:.3f}, {ci_upper:.3f}]")
+    # 保存修改后的表格
+    df.to_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-癌与非癌-整合后结2.xlsx', index=False)
 
-    plot_confusion_matrix(label, pred, ['Tumor', 'Non-tumor'], font_size=12)
-
-    # 计算正类为1的ROC
-    fpr1, tpr1, roc_auc1 = compute_roc(label, prob1, pos_label=1)
-
-    # 计算正类为0的ROC
-    fpr0, tpr0, roc_auc0 = compute_roc(label, prob0, pos_label=0)
-
-    # 绘制ROC曲线
-    plt.figure(figsize=(8, 6))
-    plot_roc(fpr1, tpr1, roc_auc1, 'Tumor', ci_lower1, ci_upper1, '#F77D56')
-    plot_roc(fpr0, tpr0, roc_auc0, 'Non-tumor', ci_lower0, ci_upper0, '#F4E60B')
-    plt.plot([0, 1], [0, 1], 'k--')  # 绘制对角线
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate', fontsize=20)
-    plt.ylabel('True Positive Rate', fontsize=20)
-    # 调整坐标轴刻度数值的大小
-    plt.tick_params(axis='both', which='major', labelsize=16)  # 主刻度
-    plt.legend(
-        loc='lower right',
-        fontsize=18,
-        frameon=True,
-        edgecolor='white'
-    )
-    # plt.grid(True)
-
-    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/demo'
-    os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
-    save_path = os.path.join(save_dir, f"非癌与癌_ROC.pdf")
-    plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 
 
 # 示例调用
 if __name__ == "__main__":
-    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/data_01_人工判读与模型判读_35例.xlsx'  # 替换为您的文件路径
+    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-癌与非癌-整合后结果.xlsx'  # 替换为您的文件路径
     main(file_path)
