@@ -43,7 +43,7 @@ def plot_confusion_matrix(cm, class_labels, title='Confusion Matrix'):
     # 绘制热力图
 
     plt.figure(figsize=(8, 6))
-    ax = sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_labels, yticklabels=class_labels,
+    ax = sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names,
                      cbar=True,
                      linewidths=0)
 
@@ -235,17 +235,16 @@ def map_case_0123(label):
 if __name__ == "__main__":
     # 假设你的数据已经加载为 pandas DataFrame
     df = pd.read_excel(
-        '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/副本模型验证结果+概率-250414.xlsx',
-        sheet_name='外部验证-浸润非浸润')
+        '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/外部验证-浸润性.xlsx')
     # 假设df已经包含 'Label', 'ModelPred', 'ModelProb' 三列
     # 通过 'Label' 获取真实标签
-    labels = df['Label'].values
-    doctor_results = df['ModelPred'].values
+    # labels = df['Label'].values
+    # doctor_results = df['ModelPred'].values
     class_names = ['Non-tumor', 'Non-infiltrating', 'Infiltrating']
-    mapped_labels = apply_mapping_to_labels(labels, map_case_0123)
-    mapped_results = apply_mapping_to_labels(doctor_results, map_case_0123)  # 使用情况1的映射
-    df['Label'] = mapped_labels
-    df['ModelPred'] = mapped_results
+    # mapped_labels = apply_mapping_to_labels(labels, map_case_0123)
+    # mapped_results = apply_mapping_to_labels(doctor_results, map_case_0123)  # 使用情况1的映射
+    # df['Label'] = mapped_labels
+    # df['ModelPred'] = mapped_results
     # df = generate_remaining_probs(df)
     # 计算指标
     prob_cols = ['ModelProb_0', 'ModelProb_1', 'ModelProb_2']

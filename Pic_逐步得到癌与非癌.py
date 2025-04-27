@@ -163,7 +163,7 @@ def transform(value):
 
 
 def transform_(value):
-    if value in [0]:
+    if value in [0, 1]:
         return 0
     else:
         return 1
@@ -179,7 +179,7 @@ def process_dataframe(df):
     """
 
     # Label0_0 列处理
-    df["Label_tumorOrNo0"] = df["Label0"].apply(lambda x: 0 if x in [0, 1] else 1)
+    df["Label_tumorOrNo0"] = df["Label"].apply(lambda x: 0 if x in [0, 1] else 1)
 
     # Pred0_0 及 ModelProb 列处理
     def process_pred(row):
@@ -203,14 +203,14 @@ def process_dataframe1(df):
     """
 
     # Label0_0 列处理
-    df["Label_tumorOrNo1"] = df["Label"].apply(lambda x: 0 if x in [0] else 1)
+    df["Label_tumorOrNo1"] = df["Label0"].apply(lambda x: 0 if x in [0,1] else 1)
 
     # Pred0_0 及 ModelProb 列处理
     def process_pred(row):
-        if row["Pred1"] in [0]:
-            return pd.Series([0, row["Prob_Cls00"], 1.0-row["Prob_Cls00"]])
+        if row["Pred0"] in [0, 1]:
+            return pd.Series([0, row["Prob_Cls0"]+row["Prob_Cls1"], 1.0-(row["Prob_Cls0"]+row["Prob_Cls1"])])
         else:
-            return pd.Series([1, 1.0-(row["Prob_Cls10"]+row["Prob_Cls20"]), row["Prob_Cls10"]+row["Prob_Cls20"]])
+            return pd.Series([1, 1.0-(row["Prob_Cls2"]+row["Prob_Cls3"]), row["Prob_Cls2"]+row["Prob_Cls3"]])
 
     df[["Pred_tumorOrNo1", "Pred_tumorOrNo1_0", "Pred_tumorOrNo1_1"]] = df.apply(process_pred, axis=1)
 
@@ -231,10 +231,10 @@ def process_dataframe3(df):
 
     # Pred0_0 及 ModelProb 列处理
     def process_pred(row):
-        if row["Pred1"] in [0]:
-            return pd.Series([0, row["Prob_Cls00"], 1.0-row["Prob_Cls00"]])
+        if row["Pred"] in [0]:
+            return pd.Series([0, row["Prob_Cls0"], 1.0-row["Prob_Cls0"]])
         else:
-            return pd.Series([1, 1.0-(row["Prob_Cls10"]+row["Prob_Cls20"]), row["Prob_Cls10"]+row["Prob_Cls20"]])
+            return pd.Series([1, 1.0-(row["Prob_Cls1"]+row["Prob_Cls2"]), row["Prob_Cls1"]+row["Prob_Cls2"]])
 
     df[["Pred_tumorOrNo1", "Pred_tumorOrNo1_0", "Pred_tumorOrNo1_1"]] = df.apply(process_pred, axis=1)
 
@@ -265,23 +265,23 @@ def process_pred_tumor_flags(df):
 def main(file_path):
     # 获取数据
 
-    df = pd.read_excel(file_path)  # 假设数据存储在Excel文件中
+    df = pd.read_excel(file_path, sheet_name='外部验证-浸润非浸润')  # 假设数据存储在Excel文件中
 
 
     # # 应用转换逻辑并新增一列
-    # df["Pred0_0"] = df["Pred0_0"].apply(transform_)
-    # df["Label0_0"] = df["Label0_0"].apply(transform_)
+    df["Pred0"] = df["Pred"].apply(transform)
+    df["Label0"] = df["Label"].apply(transform)
 
-
+    # process_dataframe1(df)
     # 调用处理方法
-    process_pred_tumor_flags(df)
+    # process_pred_tumor_flags(df)
 
     # 保存修改后的表格
-    df.to_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-癌与非癌-整合后结2.xlsx', index=False)
+    df.to_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-浸润性.xlsx', index=False)
 
 
 
 # 示例调用
 if __name__ == "__main__":
-    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-癌与非癌-整合后结果.xlsx'  # 替换为您的文件路径
+    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/副本模型验证结果+概率-250414.xlsx'  # 替换为您的文件路径
     main(file_path)

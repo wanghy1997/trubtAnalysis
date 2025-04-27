@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # 加载数据
 def load_data(file_path):
     df = pd.read_excel(file_path)  # 假设数据存储在Excel文件中
-    return df['Label'], df['ModelProb0'], df['ModelProb1'], df['pred']
+    return df['Label_tumorOrNo1'], df['prob0'], df['prob1'], df['pred']
 
 
 # 计算ROC曲线和AUC
@@ -223,5 +223,5 @@ def main(file_path):
 
 # 示例调用
 if __name__ == "__main__":
-    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-癌与非癌-整合后结2.xlsx'  # 替换为您的文件路径
+    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/外部验证-癌与非癌.xlsx'  # 替换为您的文件路径
     main(file_path)

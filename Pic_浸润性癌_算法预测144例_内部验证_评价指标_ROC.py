@@ -234,7 +234,7 @@ def map_case_0123(label):
 # 主程序
 if __name__ == "__main__":
     # 假设你的数据已经加载为 pandas DataFrame
-    df = pd.read_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/副本模型验证结果+概率-250414.xlsx', sheet_name='内部验证-浸润非浸润')
+    df = pd.read_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-浸润性.xlsx', sheet_name='内部验证-浸润非浸润')
     # 假设df已经包含 'Label', 'ModelPred', 'ModelProb' 三列
 
     # 通过 'Label' 获取真实标签
