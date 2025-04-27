@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # 加载数据
 def load_data(file_path):
     df = pd.read_excel(file_path)  # 假设数据存储在Excel文件中
-    return df['Label_tumorOrNo1'], df['prob0'], df['prob1'], df['pred']
+    return df['Label'], df['ModelProb0'], df['ModelProb1'], df['pred']
 
 
 # 计算ROC曲线和AUC
@@ -151,13 +151,101 @@ def compute_metrics_ci(label, pred, pos_label=1, n_bootstraps=1000, alpha=0.95):
         'Accuracy': (accuracy, ci_lowers[4], ci_uppers[4])
     }
 
+
+def apply_mapping_to_labels(labels, mapping_function):
+    """将标签映射应用于标签数组"""
+    return np.array([mapping_function(label) for label in labels])
+
+def apply_mapping_to_doctors_predictions(doctor_results, mapping_function):
+    """将标签映射应用于医生的所有预测"""
+    for doctor, predictions in doctor_results.items():
+        doctor_results[doctor] = apply_mapping_to_labels(predictions, mapping_function)
+    return doctor_results
+
+def map_case_0123(label):
+
+    if label in [0, 1]:
+        return 0
+    elif label in [2]:
+        return 1
+    elif label in [3]:
+        return 2
+    else:
+        return label  # 保证对于未知标签的情况，返回原标签
+
+def map_case_0123_2_01(label):
+
+    if label in [0, 1]:
+        return 0
+    else:
+        return 1
+
+
+def map_case_012_2_01(label):
+
+    if label in [0]:
+        return 0
+    else:
+        return 1
+
+
+def confuse_remaining_probs_0123_2_01(df):
+    # 获取最大概率对应的类别
+    df['ModelProb_0'] = df['Prob_Cls0'] + df['Prob_Cls1']
+    df['ModelProb_1'] = df['ModelProb_0']
+
+    return df
+
+
+def gconfuse_remaining_probs_confuse01(df1, df2):
+    df1['Label_tumorOrNo1'] = df1['Label'].values
+
+    condition = (df1['ModelPred'] == 0) & (df2['ModelPred'] == 0)
+
+    df1['prob0'] = df1['ModelProb_0'].where(condition, df2['ModelProb_0'])
+    df1['prob1'] = df1['ModelProb_1'].where(condition, df2['ModelProb_1'])
+    df1['pred'] = condition.astype(int).apply(lambda x: 0 if x else 1)
+
+    return df1['Label_tumorOrNo1'], df1['prob0'], df1['prob1'], df1['pred']
+
+
+def confuse_remaining_probs_012_2_01(df):
+    # 获取最大概率对应的类别
+    df['ModelProb_0'] = df['ModelProb_0']
+    df['ModelProb_1'] = 1 - df['ModelProb_0']
+
+    return df
+
+
 # 主函数
-def main(file_path):
+def main():
     # 获取数据
 
-    label, prob0, prob1, pred = load_data(file_path)
+    # 假设你的数据已经加载为 pandas DataFrame
+    df_jinrun = pd.read_excel('/Volumes/WHY-SSD/Experimentation/模型验证结果+概率-250416.xlsx',
+                              sheet_name='外部验证-浸润非浸润')
+    df_jibie = pd.read_excel('/Volumes/WHY-SSD/Experimentation/模型验证结果+概率-250416.xlsx',
+                             sheet_name='外部验证-高低级别')
 
+    labels_jinrun = df_jinrun['Label'].values
+    doctor_results_jinrun = df_jinrun['ModelPred'].values
+    mapped_labels_jinrun = apply_mapping_to_labels(labels_jinrun, map_case_0123_2_01)
+    mapped_results_jinrun = apply_mapping_to_labels(doctor_results_jinrun, map_case_0123_2_01)  # 使用情况1的映射
+    df_jinrun['Label'] = mapped_labels_jinrun
+    df_jinrun['ModelPred'] = mapped_results_jinrun
+    df_jinrun = confuse_remaining_probs_0123_2_01(df_jinrun)
 
+    labels_jibie = df_jibie['Label'].values
+    doctor_results_jibie = df_jibie['ModelPred'].values
+    mapped_labels_jibie = apply_mapping_to_labels(labels_jibie, map_case_012_2_01)
+    mapped_results_jibie = apply_mapping_to_labels(doctor_results_jibie, map_case_012_2_01)  # 使用情况1的映射
+    df_jibie['Label'] = mapped_labels_jibie
+    df_jibie['ModelPred'] = mapped_results_jibie
+    df_jibie = confuse_remaining_probs_012_2_01(df_jibie)
+
+    label, prob0, prob1, pred = gconfuse_remaining_probs_confuse01(df_jinrun, df_jibie)
+
+    # label, prob0, prob1, pred = load_data(file_path)
 
     # 计算正类为1的AUC及其95% CI
     auc1, ci_lower1, ci_upper1 = compute_auc_ci(label, prob1, pos_label=1)
@@ -223,5 +311,5 @@ def main(file_path):
 
 # 示例调用
 if __name__ == "__main__":
-    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/外部验证-癌与非癌.xlsx'  # 替换为您的文件路径
-    main(file_path)
+
+    main()
