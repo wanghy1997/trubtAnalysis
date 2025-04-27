@@ -272,16 +272,16 @@ def main(file_path):
     df["Pred0"] = df["Pred"].apply(transform)
     df["Label0"] = df["Label"].apply(transform)
 
-    # process_dataframe1(df)
+    process_dataframe1(df)
     # 调用处理方法
     # process_pred_tumor_flags(df)
 
     # 保存修改后的表格
-    df.to_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/内部验证-浸润性.xlsx', index=False)
+    df.to_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/外部验证-浸润性-0416.xlsx', index=False)
 
 
 
 # 示例调用
 if __name__ == "__main__":
-    file_path = '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/副本模型验证结果+概率-250414.xlsx'  # 替换为您的文件路径
+    file_path = '/Volumes/WHY-SSD/Experimentation/模型验证结果+概率-250416.xlsx'  # 替换为您的文件路径
     main(file_path)

@@ -39,7 +39,7 @@ def generate_remaining_probs_three_classes(df):
 
 def calculate_metrics_three_classes(df, label_col, pred_col, prob_cols, class_labels=[0, 1, 2]):
     metrics = {}
-    auc_ci_low, auc_ci_high = [0.829,0.895,0.879], [0.929,0.970,0.961]
+    auc_ci_low, auc_ci_high = [0.880,0.834,0.903], [0.964,0.935,0.976]
     # 计算每个类别的 AUC, Sensitivity, Specificity, PPV, NPV
     for label in class_labels:
         y_true = (df[label_col] == label).astype(int)
@@ -212,7 +212,7 @@ def plot_confusion_matrix(cm, class_label, title='Confusion Matrix'):
 
 if __name__ == '__main__':
     # 假设你的数据已经加载为 pandas DataFrame
-    df = pd.read_excel('/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/副本模型验证结果+概率-250414.xlsx', sheet_name='外部验证-高低级别')
+    df = pd.read_excel('/Volumes/WHY-SSD/Experimentation/模型验证结果+概率-250416.xlsx', sheet_name='外部验证-高低级别')
     # 假设df已经包含 'Label', 'ModelPred', 'ModelProb' 三列
     # df = generate_remaining_probs_three_classes(df)
 

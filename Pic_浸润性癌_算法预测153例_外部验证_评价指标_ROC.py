@@ -36,14 +36,23 @@ def generate_remaining_probs(df):
     return df
 
 
+def confuse_remaining_probs(df):
+    # 获取最大概率对应的类别
+    df['ModelProb_0'] = df['Prob_Cls0'] + df['Prob_Cls1']
+    df['ModelProb_1'] = df['Prob_Cls2']
+    df['ModelProb_2'] = 1 - df['ModelProb_0'] - df['ModelProb_1']
+
+    return df
+
+
 def plot_confusion_matrix(cm, class_labels, title='Confusion Matrix'):
     # 使用 seaborn 绘制热力图
-    class_names = ['Non-tumor', 'Non-infiltrating', 'Infiltrating']
+    class_labels = ['Non-tumor', 'Non-infiltrating', 'Infiltrating']
     save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/验证'
     # 绘制热力图
 
     plt.figure(figsize=(8, 6))
-    ax = sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names,
+    ax = sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_labels, yticklabels=class_labels,
                      cbar=True,
                      linewidths=0)
 
@@ -122,7 +131,7 @@ def plot_roc_curve(y_true, prob_all, auc_ci_low, auc_ci_high, class_labels):
 
 def calculate_metrics(df, label_col, pred_col, prob_cols, class_labels=[0, 1, 2]):
     metrics = {}
-    auc_ci_low, auc_ci_high = [0.917, 0.794, 0.938], [0.982, 0.905, 0.991]
+    auc_ci_low, auc_ci_high = [0.925, 0.793, 0.868], [0.987, 0.907, 0.956]
     # 计算每个类别的 AUC, Sensitivity, Specificity, PPV, NPV
     for label in class_labels:
         y_true = (df[label_col] == label).astype(int)
@@ -234,18 +243,19 @@ def map_case_0123(label):
 # 主程序
 if __name__ == "__main__":
     # 假设你的数据已经加载为 pandas DataFrame
-    df = pd.read_excel(
-        '/Users/wanghongyi/Documents/a_6________写作/turbt_论文/Experimentation/外部验证-浸润性.xlsx')
+    df = pd.read_excel('/Volumes/WHY-SSD/Experimentation/模型验证结果+概率-250416.xlsx', sheet_name='外部验证-浸润非浸润')
     # 假设df已经包含 'Label', 'ModelPred', 'ModelProb' 三列
+
     # 通过 'Label' 获取真实标签
-    # labels = df['Label'].values
-    # doctor_results = df['ModelPred'].values
+    labels = df['Label'].values
+    doctor_results = df['ModelPred'].values
     class_names = ['Non-tumor', 'Non-infiltrating', 'Infiltrating']
-    # mapped_labels = apply_mapping_to_labels(labels, map_case_0123)
-    # mapped_results = apply_mapping_to_labels(doctor_results, map_case_0123)  # 使用情况1的映射
-    # df['Label'] = mapped_labels
-    # df['ModelPred'] = mapped_results
+    mapped_labels = apply_mapping_to_labels(labels, map_case_0123)
+    mapped_results = apply_mapping_to_labels(doctor_results, map_case_0123)  # 使用情况1的映射
+    df['Label'] = mapped_labels
+    df['ModelPred'] = mapped_results
     # df = generate_remaining_probs(df)
+    df = confuse_remaining_probs(df)
     # 计算指标
     prob_cols = ['ModelProb_0', 'ModelProb_1', 'ModelProb_2']
     metrics = calculate_metrics(df, 'Label', 'ModelPred', prob_cols)
