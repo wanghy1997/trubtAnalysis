@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -133,8 +135,7 @@ def plot_doctor_predictions(map_case, remark):
 def plot_doctor_predictions_0123(map_case, color_map):
 
     # 读取 Excel 数据
-    file_path = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\data_0123_人工与辅助判读_0227用.xlsx'
-    save_dir = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\人工判读与算法判读对比'
+    file_path = '/Volumes/WHY-SSD/Experimentation/data_0123_人工与辅助判读_0227用.xlsx'
 
     # 读取Excel文件
     data = pd.read_excel(file_path, sheet_name='AI_AD03')
@@ -207,14 +208,18 @@ def plot_doctor_predictions_0123(map_case, color_map):
     ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.1), fontsize=12, title="", ncol=4, frameon=False)
 
     # 显示图像
-    plt.show()
+    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/人工判读与算法辅助对比'
+    os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
+    save_path = os.path.join(save_dir, f"人工与辅助判读对比的小方格_浸润与非浸润.pdf")
+    plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+    # plt.show()
 
 
 def plot_doctor_predictions_012(map_case, color_map):
 
     # 读取 Excel 数据
-    file_path = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\data_0123_人工与辅助判读_0227用.xlsx'
-    save_dir = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\人工判读与算法判读对比'
+    file_path = '/Volumes/WHY-SSD/Experimentation/data_0123_人工与辅助判读_0227用.xlsx'
+
 
     # 读取Excel文件
     data = pd.read_excel(file_path, sheet_name='AI_AD03')
@@ -287,14 +292,17 @@ def plot_doctor_predictions_012(map_case, color_map):
     ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.1), fontsize=12, title="", ncol=4, frameon=False)
 
     # 显示图像
-    plt.show()
+    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/人工判读与算法辅助对比'
+    os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
+    save_path = os.path.join(save_dir, f"人工与辅助判读对比的小方格_高低级别.pdf")
+    plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 
 
 def plot_doctor_predictions_01(map_case, color_map):
 
     # 读取 Excel 数据
-    file_path = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\data_0123_人工与辅助判读_0227用.xlsx'
-    save_dir = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\人工判读与算法判读对比'
+    file_path = '/Volumes/WHY-SSD/Experimentation/data_0123_人工与辅助判读_0227用.xlsx'
+
 
     # 读取Excel文件
     data = pd.read_excel(file_path, sheet_name='AI_AD03')
@@ -365,7 +373,10 @@ def plot_doctor_predictions_01(map_case, color_map):
     ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.1), fontsize=12, title="", ncol=4, frameon=False)
 
     # 显示图像
-    plt.show()
+    save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/人工判读与算法辅助对比'
+    os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
+    save_path = os.path.join(save_dir, f"人工与辅助判读对比的小方格_癌与非癌.pdf")
+    plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
@@ -383,12 +394,12 @@ if __name__ == '__main__':
     }
     color_map_01 = {
         0: '#B3CCAF',  # 最浅
-        1: '#59AA87',
+        1: '#137D74',
         2: '#137D74',
     }
     # 调用函数
     plot_doctor_predictions_0123(map_case_0123, color_map_0123)
-    # plot_doctor_predictions_012(map_case_012, color_map_012)
-    # plot_doctor_predictions_01(map_case_01, color_map_01)
+    plot_doctor_predictions_012(map_case_012, color_map_012)
+    plot_doctor_predictions_01(map_case_01, color_map_01)
     # plot_doctor_predictions_everylabel(map_case_012, color_map)
     # plot_doctor_predictions_everylabel(map_case_0123,  color_map)

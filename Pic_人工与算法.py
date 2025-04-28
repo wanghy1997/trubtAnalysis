@@ -78,7 +78,7 @@ def process_and_calculate_metrics(file_path, sheet_name='AI_AD03'):
 if __name__ == '__main__':
 
     # 运行封装的方法
-    file_path = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\data_0123_人工与辅助判读_0227用.xlsx'
+    file_path = '/Volumes/WHY-SSD/Experimentation/data_0123_人工与辅助判读_0227用.xlsx'
     accuracy_df = process_and_calculate_metrics(file_path)
     print(accuracy_df)
     # 展示结果

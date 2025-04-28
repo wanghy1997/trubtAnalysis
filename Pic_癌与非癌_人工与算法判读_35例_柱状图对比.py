@@ -11,8 +11,8 @@ import os
 """
 
 # 读取 Excel 数据（修改为你的本地文件路径）
-file_path = 'F:\\文档\\a_6________写作\\turbt_论文\\Experimentation\\data_0123_人工与辅助判读_0227用.xlsx'
-save_dir = 'H:\\trubt_paper_pics\\人工判读与算法判读对比\\35例'
+file_path = '/Volumes/WHY-SSD/Experimentation/data_0123_人工与辅助判读_0227用.xlsx'
+save_dir = '/Volumes/WHY-SSD/trubt_paper_pics/人工判读与算法判读对比/35例'
 
 # 确保保存目录存在
 os.makedirs(save_dir, exist_ok=True)
@@ -115,68 +115,143 @@ colors = ['#D9534F', '#9DC4C4', '#D1DAC5', '#90A7C4']  # 算法：红色，初�
 plt.rcParams['font.family'] = 'Times New Roman'
 plt.rcParams['font.size'] = 12  # 默认字号
 
-# 绘制 Non-muscle-invasive 和 Muscle-invasive 的柱状图并保存
-for category_name in ['Non-tumor', 'Tumor']:
-    category_df = results_df[results_df['Category'] == category_name]
+# # 绘制 Non-muscle-invasive 和 Muscle-invasive 的柱状图并保存
+# for category_name in ['Non-tumor', 'Tumor']:
+#     category_df = results_df[results_df['Category'] == category_name]
+#
+#     for metric in ['Accuracy']:
+#         fig, ax = plt.subplots(figsize=(12, 6))
+#
+#         # X 轴坐标
+#         x = np.arange(len(category_df['Doctor']))
+#         bar_width = 0.5  # 设置柱子的宽度
+#
+#         # 绘制柱状图
+#         ax.bar(x[0], category_df[metric].iloc[0], color=colors[0], label='Ours', width=bar_width)  # 算法
+#         ax.bar(x[1:5], category_df[metric].iloc[1:5], color=colors[1], label='Junior Doctors', width=bar_width)
+#         ax.bar(x[5:9], category_df[metric].iloc[5:9], color=colors[2], label='Intermediate Doctors', width=bar_width)
+#         ax.bar(x[9:], category_df[metric].iloc[9:], color=colors[3], label='Senior Doctors', width=bar_width)
+#
+#         # 计算并绘制每个级别的平均值虚线
+#         avg_junior = np.mean(category_df[metric].iloc[1:5])
+#         avg_intermediate = np.mean(category_df[metric].iloc[5:9])
+#         avg_senior = np.mean(category_df[metric].iloc[9:])
+#
+#         # 添加分隔线
+#         ax.axvline(x=0.5, color='black', linestyle='--')  # 算法和初级医生之间
+#         ax.axvline(x=4.5, color='gray', linestyle='--')  # 初级和中级医生之间
+#         ax.axvline(x=8.5, color='gray', linestyle='--')  # 中级和高级医生之间
+#
+#         # 绘制平均值虚线
+#         ax.plot([0, len(category_df['Doctor'])], [avg_junior, avg_junior], color=colors[1], linestyle='--', linewidth=2)
+#         ax.plot([0, len(category_df['Doctor'])], [avg_intermediate, avg_intermediate], color=colors[2], linestyle='--', linewidth=2)
+#         ax.plot([0, len(category_df['Doctor'])], [avg_senior, avg_senior], color=colors[3], linestyle='--', linewidth=2)
+#
+#         # 设置 X 轴
+#         ax.set_xlim([-0.5, len(category_df['Doctor']) - 0.5])
+#         ax.set_xticks(x)
+#         ax.set_xticklabels(category_df['Doctor'], rotation=45)
+#         ax.set_ylabel(metric)
+#         ax.set_ylim([0, 1])
+#         ax.set_title(f"{category_name}")
+#
+#         # 删除右侧和上方的边框
+#         ax.spines['right'].set_color('none')
+#         ax.spines['top'].set_color('none')
+#
+#         # **创建虚线图例**
+#         legend_lines = [
+#             mlines.Line2D([], [], color=colors[1], linestyle='--', linewidth=2, label='Average for Junior'),
+#             mlines.Line2D([], [], color=colors[2], linestyle='--', linewidth=2, label='Average for Intermediate'),
+#             mlines.Line2D([], [], color=colors[3], linestyle='--', linewidth=2, label='Average for Senior'),
+#         ]
+#
+#         ax.legend(handles=legend_lines, loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=3, frameon=False, fontsize=12, handletextpad=2, columnspacing=5)
+#
+#         plt.tight_layout()
+#         # # **保存文件**
+#         os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
+#         save_path = os.path.join(save_dir, f"{metric}_for_{category_name}.pdf")
+#         plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+#
+#
+#
+# print(f"所有图像已保存至: {save_dir}")
 
-    for metric in ['Accuracy']:
-        fig, ax = plt.subplots(figsize=(12, 6))
+colors = ['#D9534F', '#D1DAC5', '#cce4fc', '#60acf4', '#fcfcec', '#f4d44c', '#f1e9e7', '#e0788c']
 
-        # X 轴坐标
-        x = np.arange(len(category_df['Doctor']))
-        bar_width = 0.5  # 设置柱子的宽度
+# Assuming results_df is a DataFrame with 'Doctor', 'Category', 'Accuracy' columns
+# Example: results_df = pd.DataFrame({'Doctor': ['Algorithm', 'Junior1', ...], 'Category': ['High-garde', 'Low-garde', ...], 'Accuracy': [0.9, 0.85, ...]})
 
-        # 绘制柱状图
-        ax.bar(x[0], category_df[metric].iloc[0], color=colors[0], label='Ours', width=bar_width)  # 算法
-        ax.bar(x[1:5], category_df[metric].iloc[1:5], color=colors[1], label='Junior Doctors', width=bar_width)
-        ax.bar(x[5:9], category_df[metric].iloc[5:9], color=colors[2], label='Intermediate Doctors', width=bar_width)
-        ax.bar(x[9:], category_df[metric].iloc[9:], color=colors[3], label='Senior Doctors', width=bar_width)
+# Pivot the DataFrame to have 'Non-invasive carcinoma', 'Invasive carcinoma' as columns
+pivot_df = results_df.pivot(index='Doctor', columns='Category', values='Accuracy')
+desired_order = ['Ours'] + [d for d in pivot_df.index if d != 'Ours']
+pivot_df = pivot_df.reindex(desired_order)
 
-        # 计算并绘制每个级别的平均值虚线
-        avg_junior = np.mean(category_df[metric].iloc[1:5])
-        avg_intermediate = np.mean(category_df[metric].iloc[5:9])
-        avg_senior = np.mean(category_df[metric].iloc[9:])
+doctors = pivot_df.index  # Now 'Ours' is guaranteed to be first
 
-        # 添加分隔线
-        ax.axvline(x=0.5, color='black', linestyle='--')  # 算法和初级医生之间
-        ax.axvline(x=4.5, color='gray', linestyle='--')  # 初级和中级医生之间
-        ax.axvline(x=8.5, color='gray', linestyle='--')  # 中级和高级医生之间
+# Define group indices based on doctor categories
+# Order: Algorithm (1), Junior (4), Intermediate (4), Senior (4)
+group_indices = [0] + [1] * 4 + [2] * 4 + [3] * 4  # Total 13 doctors
 
-        # 绘制平均值虚线
-        ax.plot([0, len(category_df['Doctor'])], [avg_junior, avg_junior], color=colors[1], linestyle='--', linewidth=2)
-        ax.plot([0, len(category_df['Doctor'])], [avg_intermediate, avg_intermediate], color=colors[2], linestyle='--', linewidth=2)
-        ax.plot([0, len(category_df['Doctor'])], [avg_senior, avg_senior], color=colors[3], linestyle='--', linewidth=2)
+# Set bar width to ensure a small gap
+bar_width = 0.25
 
-        # 设置 X 轴
-        ax.set_xlim([-0.5, len(category_df['Doctor']) - 0.5])
-        ax.set_xticks(x)
-        ax.set_xticklabels(category_df['Doctor'], rotation=45)
-        ax.set_ylabel(metric)
-        ax.set_ylim([0, 1])
-        ax.set_title(f"{category_name}")
+# Set x positions for each doctor
+x = np.arange(len(doctors))
 
-        # 删除右侧和上方的边框
-        ax.spines['right'].set_color('none')
-        ax.spines['top'].set_color('none')
-
-        # **创建虚线图例**
-        legend_lines = [
-            mlines.Line2D([], [], color=colors[1], linestyle='--', linewidth=2, label='Average for Junior'),
-            mlines.Line2D([], [], color=colors[2], linestyle='--', linewidth=2, label='Average for Intermediate'),
-            mlines.Line2D([], [], color=colors[3], linestyle='--', linewidth=2, label='Average for Senior'),
-        ]
-
-        ax.legend(handles=legend_lines, loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=3, frameon=False, fontsize=12, handletextpad=2, columnspacing=5)
-
-        plt.tight_layout()
-        # # **保存文件**
-        os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
-        save_path = os.path.join(save_dir, f"{metric}_for_{category_name}.pdf")
-        plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+# Create figure and axis
+fig, ax = plt.subplots(figsize=(15, 6))
 
 
+# Plot bars for each doctor
+for i in range(len(doctors)):
+    group = group_indices[i]
+    color_high = colors[group * 2 + 1]  # Color for 'High-garde'
+    color_low = colors[group * 2]  # Color for 'Low-garde'
+    high_val = pivot_df['Tumor'].iloc[i]
+    low_val = pivot_df['Non-tumor'].iloc[i]
+    # Plot 'Low-garde' bar (dashed outline for Junior, Intermediate, Senior)
+    hatch = '//' if group in [1, 2, 3] else None  # Apply hatching for Junior (1), Intermediate (2), Senior (3)
+    ax.bar(x[i] + bar_width / 2, low_val, width=bar_width, color=color_low, hatch=hatch)
 
-print(f"所有图像已保存至: {save_dir}")
+    # Plot 'High-garde' bar (solid)
+    ax.bar(x[i] - bar_width / 2, high_val, width=bar_width, color=color_high)
+    # Add accuracy values on top of bars
+    ax.text(x[i] + bar_width / 2, low_val + 0.01, f'{low_val:.2f}', ha='center', va='bottom', fontsize=10)
+    ax.text(x[i] - bar_width / 2, high_val + 0.01, f'{high_val:.2f}', ha='center', va='bottom', fontsize=10)
+
+
+# Add separation lines between doctor categories
+ax.axvline(x=0.5, color='black', linestyle='--')  # After Algorithm
+ax.axvline(x=4.5, color='gray', linestyle='--')  # After Junior
+ax.axvline(x=8.5, color='gray', linestyle='--')  # After Intermediate
+
+# Set x-ticks and labels
+ax.set_xticks(x)
+ax.set_xticklabels(doctors, rotation=45)
+
+# Set labels and limits
+ax.set_ylabel('Accuracy')
+ax.set_ylim([0, 1])
+ax.set_title('Accuracy for Non-tumor and Tumor')
+
+# Remove right and top spines for cleaner look
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+
+# Add legend for High-grade and Low-grade
+ax.legend(['Non-tumor', 'Tumor'], loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False,
+          fontsize=12)
+
+# Adjust layout and save the plot
+plt.tight_layout()
+# plt.savefig('accuracy_high_low.png', format='png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close(fig)
+
+
+
 
 # 以表格形式打印数据
 from tabulate import tabulate

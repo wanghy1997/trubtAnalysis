@@ -182,7 +182,7 @@ def main(file_path):
     for metric, (value, ci_lower, ci_upper) in metrics_class0.items():
         print(f"{metric}: {value:.3f}, 95% CI: [{ci_lower:.3f}, {ci_upper:.3f}]")
 
-    plot_confusion_matrix(label, pred, ['Tumor', 'Non-tumor'], font_size=12)
+    plot_confusion_matrix(label, pred, ['Non-tumor', 'Tumor'], font_size=12)
 
     # 计算正类为1的ROC
     fpr1, tpr1, roc_auc1 = compute_roc(label, prob1, pos_label=1)
