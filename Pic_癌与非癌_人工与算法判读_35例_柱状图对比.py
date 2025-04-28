@@ -95,7 +95,21 @@ for doctor in all_doctors:
         accuracy = accuracy_score(true_labels[mask], predicted_labels[mask])
         f1 = f1_score(true_labels[mask], predicted_labels[mask], average='weighted', zero_division=0)
         recall = recall_score(true_labels[mask], predicted_labels[mask], average='weighted', zero_division=0)
-        specificity, ppv, npv = calculate_additional_metrics(true_labels[mask], predicted_labels[mask])
+        # specificity, ppv, npv = calculate_additional_metrics(true_labels[mask], predicted_labels[mask])
+            # 当前类别作为正类
+        tp = ((true_labels == category_label) & (predicted_labels == category_label)).sum()
+        fp = ((true_labels != category_label) & (predicted_labels == category_label)).sum()
+        tn = ((true_labels != category_label) & (predicted_labels != category_label)).sum()
+        fn = ((true_labels == category_label) & (predicted_labels != category_label)).sum()
+
+        # 计算各项指标
+        # accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) != 0 else 0
+        precision = tp / (tp + fp) if (tp + fp) != 0 else 0
+        # recall = tp / (tp + fn) if (tp + fn) != 0 else 0
+        # f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
+        specificity = tn / (tn + fp) if (tn + fp) != 0 else 0
+        ppv = precision  # PPV就是precision
+        npv = tn / (tn + fn) if (tn + fn) != 0 else 0
 
         results['Doctor'].append(doctor)
         results['Category'].append(category)
@@ -186,7 +200,14 @@ colors = ['#D9534F', '#D1DAC5', '#cce4fc', '#60acf4', '#fcfcec', '#f4d44c', '#f1
 
 # Pivot the DataFrame to have 'Non-invasive carcinoma', 'Invasive carcinoma' as columns
 pivot_df = results_df.pivot(index='Doctor', columns='Category', values='Accuracy')
-desired_order = ['Ours'] + [d for d in pivot_df.index if d != 'Ours']
+# desired_order = ['Ours'] + [d for d in pivot_df.index if d != 'Ours']
+# pivot_df = pivot_df.reindex(desired_order)
+#
+# doctors = pivot_df.index  # Now 'Ours' is guaranteed to be first
+# 构建 desired_order，确保 'Ours' 在前，后面是 all_doctors 的顺序
+desired_order = ['Ours'] + all_doctors
+
+# 重新索引 pivot_df
 pivot_df = pivot_df.reindex(desired_order)
 
 doctors = pivot_df.index  # Now 'Ours' is guaranteed to be first
@@ -260,8 +281,10 @@ ax.legend(handles=legend_patches, loc='upper center', bbox_to_anchor=(0.5, -0.15
 
 # Adjust layout and save the plot
 plt.tight_layout()
-# plt.savefig('accuracy_high_low.png', format='png', dpi=300, bbox_inches='tight')
-plt.show()
+os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
+save_path = os.path.join(save_dir, f"Non-tumor and Tumor_35.pdf")
+plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+# plt.show()
 plt.close(fig)
 
 

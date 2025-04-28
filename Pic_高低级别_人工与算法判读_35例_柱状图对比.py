@@ -33,13 +33,14 @@ algorithm_metrics = {
     'Low-garde': {'Accuracy': 0.943, 'F1 Score': 0.8000, 'Recall': 0.8000, 'Specificity': 0.8000, 'PPV': 0.8000, 'NPV': 0.8000}
 }
 
-# 计算每位医生的性能，并增加 Specificity, PPV, NPV 指标
-def calculate_additional_metrics(true_labels, pred_labels):
-    """计算 Specificity, PPV, NPV """
-    tp = ((true_labels == 1) & (pred_labels == 1)).sum()  # True Positive
-    tn = ((true_labels == 0) & (pred_labels == 0)).sum()  # True Negative
-    fp = ((true_labels == 0) & (pred_labels == 1)).sum()  # False Positive
-    fn = ((true_labels == 1) & (pred_labels == 0)).sum()  # False Negative
+
+# 计算 Specificity, PPV, NPV，针对任意正类标签
+def calculate_additional_metrics(true_labels, pred_labels, pos_label):
+    """计算 Specificity, PPV, NPV，针对 pos_label 作为正类 """
+    tp = ((true_labels == pos_label) & (pred_labels == pos_label)).sum()  # True Positive
+    tn = ((true_labels != pos_label) & (pred_labels != pos_label)).sum()  # True Negative
+    fp = ((true_labels != pos_label) & (pred_labels == pos_label)).sum()  # False Positive
+    fn = ((true_labels == pos_label) & (pred_labels != pos_label)).sum()  # False Negative
 
     specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
     ppv = tp / (tp + fp) if (tp + fp) > 0 else 0  # Precision
@@ -85,25 +86,27 @@ for category in ['High-garde', 'Low-garde']:
     results['NPV'].append(algorithm_metrics[category]['NPV'])
 
 
-# 计算每位医生的性能
+# 计算每位医生的性能（修改部分）
 for doctor in all_doctors:
     predicted_labels = merge_labels(data[doctor].values)
 
-    for category, category_label in [('High-garde', 3), ('Low-garde', 2)]:
-        mask = true_labels == category_label
-        if np.sum(mask) == 0:
-            continue
+    for category, pos_label in [('High-garde', 3), ('Low-garde', 2)]:
+        # 将标签转换为二分类：pos_label 为正类（1），其他为负类（0）
+        true_binary = (true_labels == pos_label).astype(int)
+        pred_binary = (predicted_labels == pos_label).astype(int)
 
-        accuracy = accuracy_score(true_labels[mask], predicted_labels[mask])
-        f1 = f1_score(true_labels[mask], predicted_labels[mask], average='weighted', zero_division=0)
-        recall = recall_score(true_labels[mask], predicted_labels[mask], average='weighted', zero_division=0)
-        specificity, ppv, npv = calculate_additional_metrics(true_labels[mask], predicted_labels[mask])
+        # 计算指标
+        accuracy = accuracy_score(true_binary, pred_binary)
+        f1 = f1_score(true_binary, pred_binary, zero_division=0)
+        recall = recall_score(true_binary, pred_binary, zero_division=0)
+        specificity, ppv, npv = calculate_additional_metrics(true_labels, predicted_labels, pos_label)
 
+        # 存储结果
         results['Doctor'].append(doctor)
         results['Category'].append(category)
         results['Accuracy'].append(accuracy)
         results['F1 Score'].append(f1)
-        results['Recall'].append(recall)  # Recall
+        results['Recall'].append(recall)
         results['Specificity'].append(specificity)
         results['PPV'].append(ppv)
         results['NPV'].append(npv)
@@ -122,11 +125,18 @@ colors = ['#D9534F', '#D1DAC5', '#cce4fc', '#60acf4', '#fcfcec', '#f4d44c', '#f1
 
 # Pivot the DataFrame to have 'High-garde' and 'Low-garde' as columns
 pivot_df = results_df.pivot(index='Doctor', columns='Category', values='Accuracy')
-desired_order = ['Ours'] + [d for d in pivot_df.index if d != 'Ours']
+# desired_order = ['Ours'] + [d for d in pivot_df.index if d != 'Ours']
+# pivot_df = pivot_df.reindex(desired_order)
+#
+# doctors = pivot_df.index  # Now 'Ours' is guaranteed to be first
+# 构建 desired_order，确保 'Ours' 在前，后面是 all_doctors 的顺序
+desired_order = ['Ours'] + all_doctors
+
+# 重新索引 pivot_df
 pivot_df = pivot_df.reindex(desired_order)
 
-doctors = pivot_df.index  # Now 'Ours' is guaranteed to be first
-
+# 获取 doctors，确保顺序为 'Ours' 后跟 all_doctors
+doctors = pivot_df.index
 # Define group indices based on doctor categories
 # Order: Algorithm (1), Junior (4), Intermediate (4), Senior (4)
 group_indices = [0] + [1] * 4 + [2] * 4 + [3] * 4  # Total 13 doctors
@@ -196,8 +206,10 @@ ax.legend(handles=legend_patches, loc='upper center', bbox_to_anchor=(0.5, -0.15
 
 # Adjust layout and save the plot
 plt.tight_layout()
-# plt.savefig('accuracy_high_low.png', format='png', dpi=300, bbox_inches='tight')
-plt.show()
+os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
+save_path = os.path.join(save_dir, f"Low-grade and High-grade_35.pdf")
+plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+# plt.show()
 plt.close(fig)
 
 # # 绘制 Non-muscle-invasive 和 Muscle-invasive 的柱状图并保存
