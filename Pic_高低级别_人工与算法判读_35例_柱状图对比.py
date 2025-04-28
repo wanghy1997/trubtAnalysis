@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score, f1_score, recall_score
 import matplotlib.lines as mlines
 import os
 from matplotlib.patches import Patch
+import matplotlib.patches as mpatches
 """
 非癌，低级别癌和高级别癌 0123
 不同级别医生的各项指标，以及算法判读的各项指标，
@@ -177,8 +178,21 @@ ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 
 # Add legend for High-grade and Low-grade
-ax.legend(['High-grade', 'Low-grade'], loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False,
-          fontsize=12)
+# ax.legend(['High-grade', 'Low-grade'], loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False,
+#           fontsize=12)
+legend_patches = [
+    mpatches.Patch(facecolor=colors[1], label='Algorithm (High-grade)'),
+    mpatches.Patch(facecolor=colors[0], label='Algorithm (Low-grade)'),
+    mpatches.Patch(facecolor=colors[3], label='Junior (High-grade)'),
+    mpatches.Patch(facecolor=colors[2], hatch='//', label='Junior (Low-grade)'),
+    mpatches.Patch(facecolor=colors[5], label='Intermediate (High-grade)'),
+    mpatches.Patch(facecolor=colors[4], hatch='//', label='Intermediate (Low-grade)'),
+    mpatches.Patch(facecolor=colors[7], label='Senior (High-grade)'),
+    mpatches.Patch(facecolor=colors[6], hatch='//', label='Senior (Low-grade)')
+]
+ax.legend(handles=legend_patches, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4, frameon=False, fontsize=10)
+
+
 
 # Adjust layout and save the plot
 plt.tight_layout()

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, f1_score, recall_score
 import matplotlib.lines as mlines
 import os
+import matplotlib.patches as mpatches
 """
 非癌，非浸润和浸润 0123
 不同级别医生的各项指标，以及算法判读的各项指标，
@@ -179,9 +180,22 @@ ax.set_title('Accuracy for Non-invasive carcinoma and Invasive carcinoma')
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 
-# Add legend for High-grade and Low-grade
-ax.legend(['Non-invasive carcinoma', 'Invasive carcinoma'], loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False,
-          fontsize=12)
+# # Add legend for High-grade and Non-invasive carcinoma
+# ax.legend(['Non-invasive carcinoma', 'Invasive carcinoma'], loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False,
+#           fontsize=12)
+# Add legend for doctor categories and hatch patterns
+legend_patches = [
+    mpatches.Patch(facecolor=colors[1], label='Algorithm (Invasive carcinoma)'),
+    mpatches.Patch(facecolor=colors[0], label='Algorithm (Non-invasive carcinoma)'),
+    mpatches.Patch(facecolor=colors[3], label='Junior (Invasive carcinoma)'),
+    mpatches.Patch(facecolor=colors[2], hatch='//', label='Junior (Non-invasive carcinoma)'),
+    mpatches.Patch(facecolor=colors[5], label='Intermediate (Invasive carcinoma)'),
+    mpatches.Patch(facecolor=colors[4], hatch='//', label='Intermediate (Non-invasive carcinoma)'),
+    mpatches.Patch(facecolor=colors[7], label='Senior (Invasive carcinoma)'),
+    mpatches.Patch(facecolor=colors[6], hatch='//', label='Senior (Non-invasive carcinoma)')
+]
+ax.legend(handles=legend_patches, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4, frameon=False, fontsize=10)
+
 
 # Adjust layout and save the plot
 plt.tight_layout()

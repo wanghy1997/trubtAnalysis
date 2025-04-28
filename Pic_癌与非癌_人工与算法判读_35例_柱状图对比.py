@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, f1_score, recall_score
 import matplotlib.lines as mlines
 import os
+import matplotlib.patches as mpatches
 """
 非癌，非癌和癌 0123
 不同级别医生的各项指标，以及算法判读的各项指标，
@@ -241,8 +242,21 @@ ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 
 # Add legend for High-grade and Low-grade
-ax.legend(['Non-tumor', 'Tumor'], loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False,
-          fontsize=12)
+# ax.legend(['Non-tumor', 'Tumor'], loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False,
+#           fontsize=12)
+legend_patches = [
+    mpatches.Patch(facecolor=colors[1], label='Algorithm (Tumor)'),
+    mpatches.Patch(facecolor=colors[0], label='Algorithm (Non-tumor)'),
+    mpatches.Patch(facecolor=colors[3], label='Junior (Tumor)'),
+    mpatches.Patch(facecolor=colors[2], hatch='//', label='Junior (Non-tumor)'),
+    mpatches.Patch(facecolor=colors[5], label='Intermediate (Tumor)'),
+    mpatches.Patch(facecolor=colors[4], hatch='//', label='Intermediate (Non-tumor)'),
+    mpatches.Patch(facecolor=colors[7], label='Senior (Tumor)'),
+    mpatches.Patch(facecolor=colors[6], hatch='//', label='Senior (Non-tumor)')
+]
+ax.legend(handles=legend_patches, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4, frameon=False, fontsize=10)
+
+
 
 # Adjust layout and save the plot
 plt.tight_layout()
@@ -270,12 +284,12 @@ print(table_str_2)
 +----------+------------------------+------------+------------+----------+---------------+-------+-------+
 | Doctor   | Category               |   Accuracy |   F1 Score |   Recall |   Specificity |   PPV |   NPV |
 +==========+========================+============+============+==========+===============+=======+=======+
-| Ours     | Non-invasive carcinoma |     0.9714 |     0.7368 |      0.7 |           0.8 |   0.8 |   0.8 |
+| Ours     | Non-tumor |     0.9714 |     0.7368 |      0.7 |           0.8 |   0.8 |   0.8 |
 +----------+------------------------+------------+------------+----------+---------------+-------+-------+
 +----------+--------------------+------------+------------+----------+---------------+-------+-------+
 | Doctor   | Category           |   Accuracy |   F1 Score |   Recall |   Specificity |   PPV |   NPV |
 +==========+====================+============+============+==========+===============+=======+=======+
-| Ours     | Invasive carcinoma |     0.9714 |        0.8 |      0.8 |           0.8 |   0.8 |   0.8 |
+| Ours     | Tumor |     0.9714 |        0.8 |      0.8 |           0.8 |   0.8 |   0.8 |
 +----------+--------------------+------------+------------+----------+---------------+-------+-------+
 
 """
