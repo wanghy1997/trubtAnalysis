@@ -79,7 +79,10 @@ if __name__ == '__main__':
 
     # 运行封装的方法
     file_path = '/Volumes/WHY-SSD/Experimentation/data_0123_人工与辅助判读_0227用.xlsx'
-    accuracy_df = process_and_calculate_metrics(file_path)
-    print(accuracy_df)
+    with pd.option_context('display.max_rows', None,
+                           'display.max_columns', None,
+                           'display.width', None):
+        accuracy_df = process_and_calculate_metrics(file_path)
+        print(accuracy_df)
     # 展示结果
 

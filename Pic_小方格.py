@@ -5,6 +5,86 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.lines import Line2D
+from sklearn.metrics import accuracy_score, f1_score, recall_score, confusion_matrix
+from scipy.stats import bootstrap
+
+
+def evaluate_doctor_predictions_to_excel(mapped_labels, mapped_doctor_results, excel_path=''):
+    classes = [0, 1, 2]
+    n_bootstraps = 1000
+    alpha = 0.05
+
+    # Function to compute metrics for a specific class
+    def compute_class_metrics(y_true, y_pred, cls):
+        cm = confusion_matrix(y_true, y_pred, labels=classes)
+        TP = cm[cls, cls]
+        FP = cm[:, cls].sum() - TP
+        FN = cm[cls, :].sum() - TP
+        TN = cm.sum() - TP - FP - FN
+
+        recall = TP / (TP + FN) if TP + FN > 0 else 0
+        specificity = TN / (TN + FP) if TN + FP > 0 else 0
+        ppv = TP / (TP + FP) if TP + FP > 0 else 0
+        npv = TN / (TN + FN) if TN + FN > 0 else 0
+        f1 = 2 * ppv * recall / (ppv + recall) if ppv + recall > 0 else 0
+        acc = np.mean(y_true == y_pred)
+
+        return {
+            'accuracy': acc,
+            'recall': recall,
+            'specificity': specificity,
+            'ppv': ppv,
+            'npv': npv,
+            'f1': f1
+        }
+
+    # Function to calculate bootstrap CI for a given class
+    def bootstrap_class_ci(y_true, y_pred, cls):
+        from sklearn.utils import resample
+        stats = {'accuracy': [], 'recall': [], 'specificity': [], 'ppv': [], 'npv': [], 'f1': []}
+        n = len(y_true)
+
+        for _ in range(n_bootstraps):
+            idx = resample(np.arange(n), replace=True)
+            metrics = compute_class_metrics(y_true[idx], y_pred[idx], cls)
+            for key, value in metrics.items():
+                stats[key].append(value)
+
+        ci = {}
+        for key in stats:
+            values = np.array(stats[key])
+            ci[key] = (np.percentile(values, 100 * alpha / 2),
+                       np.percentile(values, 100 * (1 - alpha / 2)))
+        return ci
+
+    # Structure to hold results for all classes
+    results_by_class = {cls: {} for cls in classes}
+
+    # Compute per-doctor metrics for each class
+    for doctor, y_pred in mapped_doctor_results.items():
+        for cls in classes:
+            metrics = compute_class_metrics(mapped_labels, y_pred, cls)
+            ci = bootstrap_class_ci(mapped_labels, y_pred, cls)
+
+            entry = {}
+
+            for metric in metrics:
+                entry[f"{metric}_value"] = metrics[metric]
+            for metric in ci:
+                entry[f"{metric}_ci_low"] = ci[metric][0]
+                entry[f"{metric}_ci_high"] = ci[metric][1]
+
+            results_by_class[cls][doctor] = entry
+
+    # Export to Excel
+    with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+        for cls in classes:
+            df = pd.DataFrame.from_dict(results_by_class[cls], orient='index')
+            df.index.name = 'Doctor'
+            df.reset_index(inplace=True)
+            df.to_excel(writer, sheet_name=f'Class {cls}', index=False)
+
+    print(f"✅ Metrics written to: {excel_path}")
 
 
 def map_case_0123(label):
@@ -132,6 +212,100 @@ def plot_doctor_predictions(map_case, remark):
     plt.show()
 
 
+def metric_ci(mapped_labels, mapped_doctor_results, excel_path='/Volumes/WHY-SSD/trubt_paper_pics/癌与非癌.xlsx'):
+    import numpy as np
+    import pandas as pd
+    from statsmodels.stats.proportion import proportion_confint
+
+    def calculate_metrics_and_ci(y_true, y_pred, pos_label, n_bootstrap=1000):
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
+
+        y_true_pos = (y_true == pos_label)
+        y_pred_pos = (y_pred == pos_label)
+
+        TP = np.sum(y_true_pos & y_pred_pos)
+        TN = np.sum(~y_true_pos & ~y_pred_pos)
+        FP = np.sum(~y_true_pos & y_pred_pos)
+        FN = np.sum(y_true_pos & ~y_pred_pos)
+
+        n = len(y_true)
+        acc = (TP + TN) / n
+        recall = TP / (TP + FN) if (TP + FN) != 0 else np.nan
+        specificity = TN / (TN + FP) if (TN + FP) != 0 else np.nan
+        ppv = TP / (TP + FP) if (TP + FP) != 0 else np.nan
+        npv = TN / (TN + FN) if (TN + FN) != 0 else np.nan
+        precision = ppv
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else np.nan
+
+        ci_acc = proportion_confint(TP + TN, n, method='wilson')
+        ci_recall = proportion_confint(TP, TP + FN, method='wilson') if (TP + FN) > 0 else (np.nan, np.nan)
+        ci_specificity = proportion_confint(TN, TN + FP, method='wilson') if (TN + FP) > 0 else (np.nan, np.nan)
+        ci_ppv = proportion_confint(TP, TP + FP, method='wilson') if (TP + FP) > 0 else (np.nan, np.nan)
+        ci_npv = proportion_confint(TN, TN + FN, method='wilson') if (TN + FN) > 0 else (np.nan, np.nan)
+
+        f1_scores = []
+        for _ in range(n_bootstrap):
+            indices = np.random.choice(n, size=n, replace=True)
+            y_true_bs = y_true[indices]
+            y_pred_bs = y_pred[indices]
+
+            tp_bs = np.sum((y_true_bs == pos_label) & (y_pred_bs == pos_label))
+            fn_bs = np.sum((y_true_bs == pos_label) & (y_pred_bs != pos_label))
+            fp_bs = np.sum((y_true_bs != pos_label) & (y_pred_bs == pos_label))
+
+            precision_bs = tp_bs / (tp_bs + fp_bs) if (tp_bs + fp_bs) > 0 else np.nan
+            recall_bs = tp_bs / (tp_bs + fn_bs) if (tp_bs + fn_bs) > 0 else np.nan
+            f1_bs = 2 * (precision_bs * recall_bs) / (precision_bs + recall_bs) if (
+                                                                                               precision_bs + recall_bs) > 0 else np.nan
+            f1_scores.append(f1_bs)
+
+        f1_scores_valid = [x for x in f1_scores if not np.isnan(x)]
+        ci_f1 = (np.percentile(f1_scores_valid, 2.5), np.percentile(f1_scores_valid, 97.5)) if f1_scores_valid else (
+            np.nan, np.nan)
+
+        metrics = {
+            'acc': acc, 'f1': f1, 'recall': recall,
+            'specificity': specificity, 'ppv': ppv, 'npv': npv
+        }
+
+        cis = {
+            'acc': ci_acc, 'recall': ci_recall, 'specificity': ci_specificity,
+            'ppv': ci_ppv, 'npv': ci_npv, 'f1': ci_f1
+        }
+
+        return metrics, cis
+
+    # 转换输入为 numpy 格式
+    for key in mapped_doctor_results:
+        mapped_doctor_results[key] = np.array(mapped_doctor_results[key])
+    mapped_labels = np.array(mapped_labels)
+
+    # 汇总结果：按 Positive=0 / Positive=1 存入不同 sheet
+    all_results = {0: {}, 1: {}}
+    for doctor in mapped_doctor_results:
+        y_true = mapped_labels
+        y_pred = mapped_doctor_results[doctor]
+        for pos_label in [0, 1]:
+            metrics, cis = calculate_metrics_and_ci(y_true, y_pred, pos_label)
+            row = {}
+            for metric in metrics:
+                row[f"{metric.upper()}_Value"] = metrics[metric]
+                row[f"{metric.upper()}_CI_Low"] = cis[metric][0]
+                row[f"{metric.upper()}_CI_High"] = cis[metric][1]
+            all_results[pos_label][doctor] = row
+
+    # 写入 Excel，医生为行，每个 positive 值一张 sheet
+    with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+        for pos_label in [0, 1]:
+            df = pd.DataFrame.from_dict(all_results[pos_label], orient='index')
+            df.index.name = 'Doctor'
+            df.reset_index(inplace=True)
+            df.to_excel(writer, sheet_name=f'Positive={pos_label}', index=False)
+
+    print(f"📄 Results saved to: {excel_path}")
+
+
 def plot_doctor_predictions_0123(map_case, color_map):
 
     # 读取 Excel 数据
@@ -153,6 +327,7 @@ def plot_doctor_predictions_0123(map_case, color_map):
     mapped_doctor_results = apply_mapping_to_doctors_predictions(doctor_results, map_case)
     print('mapped_labels', mapped_labels)
     print('mapped_doctor_results', mapped_doctor_results)
+    evaluate_doctor_predictions_to_excel(mapped_labels, mapped_doctor_results, excel_path='/Volumes/WHY-SSD/trubt_paper_pics/浸润与非浸润.xlsx')
     doctors = list(mapped_doctor_results.keys())
     labels = mapped_labels
     # 创建图形
@@ -237,9 +412,9 @@ def plot_doctor_predictions_012(map_case, color_map):
     mapped_doctor_results = apply_mapping_to_doctors_predictions(doctor_results, map_case)  # 使用情况1的映射
     print('mapped_labels', mapped_labels)
     print('mapped_doctor_results', mapped_doctor_results)
+    evaluate_doctor_predictions_to_excel(mapped_labels, mapped_doctor_results, excel_path='/Volumes/WHY-SSD/trubt_paper_pics/高低级别.xlsx')
     doctors = list(mapped_doctor_results.keys())
     labels = mapped_labels
-    # 创建图形
     fig, ax = plt.subplots(figsize=(15, 10))
 
     # 设置格子尺寸和间距
@@ -320,6 +495,7 @@ def plot_doctor_predictions_01(map_case, color_map):
     mapped_doctor_results = apply_mapping_to_doctors_predictions(doctor_results, map_case)  # 使用情况1的映射
     print('mapped_labels', mapped_labels)
     print('mapped_doctor_results', mapped_doctor_results)
+    metric_ci(mapped_labels, mapped_doctor_results)
     doctors = list(mapped_doctor_results.keys())
     labels = mapped_labels
     # 创建图形
@@ -377,6 +553,71 @@ def plot_doctor_predictions_01(map_case, color_map):
     os.makedirs(save_dir, exist_ok=True)  # 确保目录存在
     save_path = os.path.join(save_dir, f"人工与辅助判读对比的小方格_癌与非癌.pdf")
     plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+
+
+
+# 计算混淆矩阵指标及其95%置信区间
+def compute_metrics_ci(label, pred, pos_label=1, n_bootstraps=1000, alpha=0.95):
+    from sklearn.metrics import roc_curve, auc, confusion_matrix
+    from sklearn.utils import resample
+    """
+    计算Sensitivity, Specificity, PPV, NPV, ACC及其95% CI。
+    参数：
+    - label: 真实标签
+    - pred: 预测标签
+    - pos_label: 正类标签（0或1）
+    - n_bootstraps: Bootstrap重采样次数
+    - alpha: 置信水平（默认95%）
+    返回：字典，包含各指标及其CI
+    """
+    # 如果正类为0，反转标签
+    if pos_label == 0:
+        label = 1 - label
+        pred = 1 - pred
+
+    # 计算原始混淆矩阵和指标
+    cm = confusion_matrix(label, pred)
+    tn, fp, fn, tp = cm.ravel()
+    total = tp + tn + fp + fn
+
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+    ppv = tp / (tp + fp) if (tp + fp) > 0 else 0
+    npv = tn / (tn + fn) if (tn + fn) > 0 else 0
+    accuracy = (tp + tn) / total if total > 0 else 0
+
+    # Bootstrap计算置信区间
+    sensitivities, specificities, ppvs, npvs, accuracies = [], [], [], [], []
+    for _ in range(n_bootstraps):
+        label_resampled, pred_resampled = resample(label, pred)
+        cm_resampled = confusion_matrix(label_resampled, pred_resampled)
+        tn_r, fp_r, fn_r, tp_r = cm_resampled.ravel()
+        total_r = tp_r + tn_r + fp_r + fn_r
+
+        se = tp_r / (tp_r + fn_r) if (tp_r + fn_r) > 0 else 0
+        sp = tn_r / (tn_r + fp_r) if (tn_r + fp_r) > 0 else 0
+        ppv_r = tp_r / (tp_r + fp_r) if (tp_r + fp_r) > 0 else 0
+        npv_r = tn_r / (tn_r + fn_r) if (tn_r + fn_r) > 0 else 0
+        acc_r = (tp_r + tn_r) / total_r if total_r > 0 else 0
+
+        sensitivities.append(se)
+        specificities.append(sp)
+        ppvs.append(ppv_r)
+        npvs.append(npv_r)
+        accuracies.append(acc_r)
+
+    # 计算95% CI
+    metrics = [sensitivities, specificities, ppvs, npvs, accuracies]
+    ci_lowers = [np.percentile(m, (1 - alpha) / 2 * 100) for m in metrics]
+    ci_uppers = [np.percentile(m, (1 + alpha) / 2 * 100) for m in metrics]
+
+    return {
+        'Sensitivity': (sensitivity, ci_lowers[0], ci_uppers[0]),
+        'Specificity': (specificity, ci_lowers[1], ci_uppers[1]),
+        'PPV': (ppv, ci_lowers[2], ci_uppers[2]),
+        'NPV': (npv, ci_lowers[3], ci_uppers[3]),
+        'Accuracy': (accuracy, ci_lowers[4], ci_uppers[4])
+    }
 
 
 if __name__ == '__main__':
