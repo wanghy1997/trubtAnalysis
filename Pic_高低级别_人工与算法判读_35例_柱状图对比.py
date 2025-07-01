@@ -34,6 +34,128 @@ algorithm_metrics = {
 }
 
 
+
+def drawAHistogram(save_dir, results_df):
+    """
+        绘制柱状图，展示不同医生在非浸润性癌和浸润性癌的准确率。
+    :param save_dir: 生成的 pdf 要保存的路径，例如  '/Volumes/WHY-SSD/trubt_paper_pics/浸润性癌'，生成的.pdf 文件会保存到‘浸润性癌’文件夹里。
+    :param results_df: 包含医生、类别和准确率的 DataFrame，格式应为三列：Doctor, Category, Accuracy。
+    :return:
+    """
+    import os
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib.lines as mlines
+    import matplotlib.patches as mpatches
+
+    # 手动设置颜色（分别为：ours, junior, intermediate, senior）
+    color_inv = {
+        'Ours': '#d1dac5',  # 浅灰绿
+        'Junior': '#61acf4',  # 浅蓝
+        'Intermediate': '#f4d44c',  # 浅黄
+        'Senior': '#e0788c'  # 浅红
+    }
+    color_non = {
+        'Ours': '#d95350',  # 红
+        'Junior': '#cce4fc',  # 同色斜线填充
+        'Intermediate': '#fdfcec',
+        'Senior': '#f1e2de'
+    }
+
+    # 医生顺序（与数据匹配）
+    ordered_doctors = [
+        'Ours',
+        'J-1', 'J-2', 'J-3', 'J-4',
+        'I-1', 'I-2', 'I-3', 'I-4',
+        'S-1', 'S-2', 'S-3', 'S-4'
+    ]
+
+    # 医生级别映射（用于决定颜色）
+    level_map = {
+        'Ours': 'Ours',
+        **{f'J-{i}': 'Junior' for i in range(1, 5)},
+        **{f'I-{i}': 'Intermediate' for i in range(1, 5)},
+        **{f'S-{i}': 'Senior' for i in range(1, 5)},
+    }
+
+    # print("【results_df.head()】")
+    # print(results_df.head(20))  # 显示前20行
+    #
+    # print("\n【results_df['Doctor'].unique()】")
+    # print(results_df['Doctor'].unique())  # 显示所有医生名称
+    #
+    # print("\n【results_df.columns】")
+    # print(results_df.columns)  # 确认是否真的有 'Doctor'、'Category'、'Accuracy' 三列
+
+    # 转成宽格式
+    pivot_df = results_df.pivot(index='Doctor', columns='Category', values='Accuracy').reset_index()
+    pivot_df.columns = ['Doctor', 'Low-garde', 'High-garde']
+    pivot_df = pivot_df.set_index('Doctor').loc[ordered_doctors].reset_index()
+    pivot_df['Level'] = pivot_df['Doctor'].map(level_map)
+
+    # 开始绘图
+    fig, ax = plt.subplots(figsize=(20, 6))
+    bar_width = 0.35
+    x = np.arange(len(pivot_df))
+
+    # 🎯 先绘制 invasive（纯色） → 左边
+    for idx, row in pivot_df.iterrows():
+        level = row['Level']
+        bar = ax.bar(x[idx] - bar_width / 2, row['High-garde'], width=bar_width,
+                     color=color_inv[level])
+        ax.text(x[idx] - bar_width / 2, row['High-garde'] + 0.01, f"{row['High-garde']:.2f}",
+                ha='center', va='bottom', fontsize=10)
+
+    # 🎯 再绘制 non-invasive（斜线） → 右边
+    for idx, row in pivot_df.iterrows():
+        level = row['Level']
+        bar = ax.bar(x[idx] + bar_width / 2, row['Low-garde'], width=bar_width,
+                     color=color_non[level], hatch='/', linewidth=1.5)
+        ax.text(x[idx] + bar_width / 2, row['Low-garde'] + 0.01, f"{row['Low-garde']:.2f}",
+                ha='center', va='bottom', fontsize=10)
+
+
+
+    # 设置x轴
+    ax.set_xticks(x)
+    ax.set_xticklabels(pivot_df['Doctor'], rotation=45, ha='right', fontsize=10)
+    ax.set_ylabel('Accuracy')
+    ax.set_ylim([0, 1.05])
+    ax.set_title('Accuracy for Low-garde carcinoma and High-garde carcinoma', fontsize=14)
+
+    # 分组分隔线
+    for bound in [0.5, 4.5, 8.5]:
+        ax.axvline(x=bound, color='gray' if bound > 0.5 else 'black', linestyle='--', linewidth=1.5)
+
+    # 图例（六类）
+    legend_handles = [
+        mpatches.Patch(facecolor=color_inv['Ours'], edgecolor='black', label='Algorithm (High-garde carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Ours'], hatch='///',
+                       label='Algorithm (Low-garde carcinoma)'),
+        mpatches.Patch(facecolor=color_inv['Junior'], edgecolor='black', label='Junior (High-garde carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Junior'], hatch='///', label='Junior (Low-garde carcinoma)'),
+        mpatches.Patch(facecolor=color_inv['Intermediate'], edgecolor='black', label='Intermediate (High-garde carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Intermediate'], hatch='///', label='Intermediate (Low-garde carcinoma)'),
+        mpatches.Patch(facecolor=color_inv['Senior'], edgecolor='black', label='Senior (High-garde carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Senior'], hatch='///', label='Senior (Low-garde carcinoma)'),
+    ]
+
+    ax.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4,
+              frameon=False, fontsize=10, columnspacing=1.5, handletextpad=1)
+
+    # 去除顶部和右侧边框
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    plt.tight_layout()
+    save_path = os.path.join(save_dir, "Acc_Non_vs_Inv_Styled.pdf")
+    plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+    plt.show()
+
+    print(f"生成的柱状图 pdf 格式的文件，已保存至: {save_path}")
+
+
 # 计算 Specificity, PPV, NPV，针对任意正类标签
 def calculate_additional_metrics(true_labels, pred_labels, pos_label):
     """计算 Specificity, PPV, NPV，针对 pos_label 作为正类 """
@@ -212,6 +334,8 @@ plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
 # plt.show()
 plt.close(fig)
 
+
+drawAHistogram(save_dir=save_dir, results_df=results_df)  # 绘制柱状图并保存
 # # 绘制 Non-muscle-invasive 和 Muscle-invasive 的柱状图并保存
 # for category_name in ['High-garde', 'Low-garde']:
 #     category_df = results_df[results_df['Category'] == category_name]

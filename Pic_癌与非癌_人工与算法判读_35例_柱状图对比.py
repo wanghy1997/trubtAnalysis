@@ -32,6 +32,129 @@ algorithm_metrics = {
     'Tumor': {'Accuracy': 0.9714, 'F1 Score': 0.8000, 'Recall': 0.8000, 'Specificity': 0.8000, 'PPV': 0.8000, 'NPV': 0.8000}
 }
 
+
+
+def drawAHistogram(save_dir, results_df):
+    """
+        绘制柱状图，展示不同医生在非浸润性癌和浸润性癌的准确率。
+    :param save_dir: 生成的 pdf 要保存的路径，例如  '/Volumes/WHY-SSD/trubt_paper_pics/浸润性癌'，生成的.pdf 文件会保存到‘浸润性癌’文件夹里。
+    :param results_df: 包含医生、类别和准确率的 DataFrame，格式应为三列：Doctor, Category, Accuracy。
+    :return:
+    """
+    import os
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib.lines as mlines
+    import matplotlib.patches as mpatches
+
+    # 手动设置颜色（分别为：ours, junior, intermediate, senior）
+    color_inv = {
+        'Ours': '#d1dac5',  # 浅灰绿
+        'Junior': '#61acf4',  # 浅蓝
+        'Intermediate': '#f4d44c',  # 浅黄
+        'Senior': '#e0788c'  # 浅红
+    }
+    color_non = {
+        'Ours': '#d95350',  # 红
+        'Junior': '#cce4fc',  # 同色斜线填充
+        'Intermediate': '#fdfcec',
+        'Senior': '#f1e2de'
+    }
+
+    # 医生顺序（与数据匹配）
+    ordered_doctors = [
+        'Ours',
+        'J-1', 'J-2', 'J-3', 'J-4',
+        'I-1', 'I-2', 'I-3', 'I-4',
+        'S-1', 'S-2', 'S-3', 'S-4'
+    ]
+
+    # 医生级别映射（用于决定颜色）
+    level_map = {
+        'Ours': 'Ours',
+        **{f'J-{i}': 'Junior' for i in range(1, 5)},
+        **{f'I-{i}': 'Intermediate' for i in range(1, 5)},
+        **{f'S-{i}': 'Senior' for i in range(1, 5)},
+    }
+
+    # print("【results_df.head()】")
+    # print(results_df.head(20))  # 显示前20行
+    #
+    # print("\n【results_df['Doctor'].unique()】")
+    # print(results_df['Doctor'].unique())  # 显示所有医生名称
+    #
+    # print("\n【results_df.columns】")
+    # print(results_df.columns)  # 确认是否真的有 'Doctor'、'Category'、'Accuracy' 三列
+
+    # 转成宽格式
+    pivot_df = results_df.pivot(index='Doctor', columns='Category', values='Accuracy').reset_index()
+    pivot_df.columns = ['Doctor', 'Non-tumor', 'Tumor']
+    pivot_df = pivot_df.set_index('Doctor').loc[ordered_doctors].reset_index()
+    pivot_df['Level'] = pivot_df['Doctor'].map(level_map)
+
+    # 开始绘图
+    fig, ax = plt.subplots(figsize=(20, 6))
+    bar_width = 0.35
+    x = np.arange(len(pivot_df))
+
+    # 🎯 先绘制 invasive（纯色） → 左边
+    for idx, row in pivot_df.iterrows():
+        level = row['Level']
+        bar = ax.bar(x[idx] - bar_width / 2, row['Tumor'], width=bar_width,
+                     color=color_inv[level])
+        ax.text(x[idx] - bar_width / 2, row['Tumor'] + 0.01, f"{row['Tumor']:.2f}",
+                ha='center', va='bottom', fontsize=10)
+
+    # 🎯 再绘制 non-invasive（斜线） → 右边
+    for idx, row in pivot_df.iterrows():
+        level = row['Level']
+        bar = ax.bar(x[idx] + bar_width / 2, row['Non-tumor'], width=bar_width,
+                     color=color_non[level], hatch='/', linewidth=1.5)
+        ax.text(x[idx] + bar_width / 2, row['Non-tumor'] + 0.01, f"{row['Non-tumor']:.2f}",
+                ha='center', va='bottom', fontsize=10)
+
+
+
+    # 设置x轴
+    ax.set_xticks(x)
+    ax.set_xticklabels(pivot_df['Doctor'], rotation=45, ha='right', fontsize=10)
+    ax.set_ylabel('Accuracy')
+    ax.set_ylim([0, 1.05])
+    ax.set_title('Accuracy for Non-tumor carcinoma and Tumor carcinoma', fontsize=14)
+
+    # 分组分隔线
+    for bound in [0.5, 4.5, 8.5]:
+        ax.axvline(x=bound, color='gray' if bound > 0.5 else 'black', linestyle='--', linewidth=1.5)
+
+    # 图例（六类）
+    legend_handles = [
+        mpatches.Patch(facecolor=color_inv['Ours'], edgecolor='black', label='Algorithm (Tumor carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Ours'], hatch='///',
+                       label='Algorithm (Non-tumor carcinoma)'),
+        mpatches.Patch(facecolor=color_inv['Junior'], edgecolor='black', label='Junior (Tumor carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Junior'], hatch='///', label='Junior (Non-tumor carcinoma)'),
+        mpatches.Patch(facecolor=color_inv['Intermediate'], edgecolor='black', label='Intermediate (Tumor carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Intermediate'], hatch='///', label='Intermediate (Non-tumor carcinoma)'),
+        mpatches.Patch(facecolor=color_inv['Senior'], edgecolor='black', label='Senior (Tumor carcinoma)'),
+        mpatches.Patch(facecolor='white', edgecolor=color_non['Senior'], hatch='///', label='Senior (Non-tumor carcinoma)'),
+    ]
+
+    ax.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4,
+              frameon=False, fontsize=10, columnspacing=1.5, handletextpad=1)
+
+    # 去除顶部和右侧边框
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    plt.tight_layout()
+    save_path = os.path.join(save_dir, "file.pdf")
+    plt.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight')
+    plt.show()
+
+    print(f"生成的柱状图 pdf 格式的文件，已保存至: {save_path}")
+
+
 # 计算每位医生的性能，并增加 Specificity, PPV, NPV 指标
 def calculate_additional_metrics(true_labels, pred_labels):
     """计算 Specificity, PPV, NPV """
@@ -130,6 +253,8 @@ colors = ['#D9534F', '#9DC4C4', '#D1DAC5', '#90A7C4']  # 算法：红色，初�
 plt.rcParams['font.family'] = 'Times New Roman'
 plt.rcParams['font.size'] = 12  # 默认字号
 
+
+drawAHistogram(save_dir=save_dir, results_df=results_df)  # 绘制柱状图并保存
 # # 绘制 Non-muscle-invasive 和 Muscle-invasive 的柱状图并保存
 # for category_name in ['Non-tumor', 'Tumor']:
 #     category_df = results_df[results_df['Category'] == category_name]
@@ -198,7 +323,7 @@ colors = ['#D9534F', '#D1DAC5', '#cce4fc', '#60acf4', '#fcfcec', '#f4d44c', '#f1
 # Assuming results_df is a DataFrame with 'Doctor', 'Category', 'Accuracy' columns
 # Example: results_df = pd.DataFrame({'Doctor': ['Algorithm', 'Junior1', ...], 'Category': ['High-garde', 'Low-garde', ...], 'Accuracy': [0.9, 0.85, ...]})
 
-# Pivot the DataFrame to have 'Non-invasive carcinoma', 'Invasive carcinoma' as columns
+
 pivot_df = results_df.pivot(index='Doctor', columns='Category', values='Accuracy')
 # desired_order = ['Ours'] + [d for d in pivot_df.index if d != 'Ours']
 # pivot_df = pivot_df.reindex(desired_order)
